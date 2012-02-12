@@ -20,7 +20,7 @@ Furthermore, this library has a few useful features like being able to
 provide your own classpath as a string and for only looking for
 namespaces matching a certain prefix.
 
-# Usage
+## Usage
 
 ```clojure
 user=> (require '[bultitude.core :as b])
@@ -37,3 +37,8 @@ user=> (b/namespaces-on-classpath :prefix "bultitude" :classpath "src:test")
 
 Note that the path separator needs to be whatever is used on your
 operating system. It can also be a collection of `File` objects. 
+
+## The Name
+
+I don't know. You'd have to ask [Phil](https://github.com/technomancy)
+about that one.
