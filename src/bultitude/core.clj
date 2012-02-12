@@ -50,13 +50,24 @@
 (defn- split-classpath [classpath]
   (.split classpath (System/getProperty "path.separator")))
 
-(defn- classpath-files
-  "A seq of all files on the classpath."
-  []
-  (let [cl (.getContextClassLoader (Thread/currentThread))]
-    (concat (when (instance? DynamicClassLoader cl)
-              (.getURLs cl))
-            (split-classpath (System/getProperty "java.class.path")))))
+(defn loader-classpath
+  "Returns a sequence of File paths from a classloader."
+  [loader]
+  (when (instance? java.net.URLClassLoader loader)
+    (map
+     #(java.io.File. (.getPath ^java.net.URL %))
+     (.getURLs ^java.net.URLClassLoader loader))))
+
+(defn classpath-files
+  "Returns a sequence of File objects of the elements on the classpath."
+  ([classloader]
+     (distinct
+      (mapcat
+       loader-classpath
+       (take-while
+        identity
+        (iterate #(.getParent %) classloader)))))
+  ([] (classpath-files (clojure.lang.RT/baseLoader))))
 
 (defn- classpath->files [classpath]
   (map io/file (if (coll? classpath)
