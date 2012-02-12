@@ -50,36 +50,58 @@
 (defn- split-classpath [classpath]
   (.split classpath (System/getProperty "path.separator")))
 
-(defn- classpath-files
-  "A seq of all files on the classpath."
-  []
-  (let [cl (.getContextClassLoader (Thread/currentThread))]
-    (concat (when (instance? DynamicClassLoader cl)
-              (.getURLs cl))
-            (split-classpath (System/getProperty "java.class.path")))))
+(defn loader-classpath
+  "Returns a sequence of File paths from a classloader."
+  [loader]
+  (when (instance? java.net.URLClassLoader loader)
+    (map
+     #(java.io.File. (.getPath ^java.net.URL %))
+     (.getURLs ^java.net.URLClassLoader loader))))
+
+(defn classpath-files
+  "Returns a sequence of File objects of the elements on the classpath."
+  ([classloader]
+     (distinct
+      (mapcat
+       loader-classpath
+       (take-while
+        identity
+        (iterate #(.getParent %) classloader)))))
+  ([] (classpath-files (clojure.lang.RT/baseLoader))))
+
+(defn- classpath->collection [classpath]
+  (if (coll? classpath)
+    classpath
+    (split-classpath classpath)))
 
 (defn- classpath->files [classpath]
-  (map io/file (if (coll? classpath)
-                 classpath
-                 (split-classpath classpath))))
+  (map io/file classpath))
+
+(defn file->namespaces
+  "Map a classpath file to the namespaces it contains. `prefix` allows for
+   reducing the namespace search space. For large directories on the classpath,
+   passing a `prefix` can provide significant efficiency gains."
+  [prefix f]
+  (cond
+    (.isDirectory f) (namespaces-in-dir
+                      (if prefix
+                        (io/file f (.replaceAll prefix "\\." "/"))
+                        f))
+    (jar? f) (let [ns-list (namespaces-in-jar f)]
+               (if prefix
+                 (filter #(and % (.startsWith (name %) prefix)) ns-list)
+                 ns-list))))
 
 (defn namespaces-on-classpath
-  "Return all namespaces matching the given prefix both on disk and
-  inside jar files. If :prefix is passed, only return namespaces that
-  begin with this prefix. If :classpath is passed, it should be a seq
-  of File objects or a classpath string. If it is not passed, default
-  to java.class.path and the current classloader, assuming it is a
-  dynamic classloader."
+  "Return symbols of all namespaces matching the given prefix both on disk and
+  inside jar files. If :prefix is passed, only return namespaces that begin with
+  this prefix. If :classpath is passed, it should be a seq of File objects or a
+  classpath string. If it is not passed, default to java.class.path and the
+  current classloader, assuming it is a dynamic classloader."
   [& {:keys [prefix classpath] :or {classpath (classpath-files)}}]
-  (let [classpath (classpath->files classpath)]
-    (concat (mapcat namespaces-in-dir
-                    (for [dir classpath
-                          :when (.isDirectory dir)]
-                      (io/file dir (if prefix (.replaceAll prefix "\\." "/") ""))))
-            (let [jars (mapcat namespaces-in-jar (filter jar? classpath))]
-              (if prefix
-                (filter #(and % (.startsWith (name %) prefix)) jars)
-                jars)))))
+  (mapcat
+   (partial file->namespaces prefix)
+   (-> classpath classpath->collection classpath->files)))
 
 (defn path-for
   "Transform a namespace into a .clj file path relative to classpath root."
@@ -88,4 +110,3 @@
            (.replace \- \_)
            (.replace \. \/))
        ".clj"))
-
