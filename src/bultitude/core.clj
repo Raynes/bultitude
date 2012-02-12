@@ -42,9 +42,10 @@
 (defn- namespaces-in-jar [jar]
   (let [jarfile (JarFile. jar)]
     (for [entry (enumeration-seq (.entries jarfile))
-          :when (clj? entry)]
-      (if-let [ns-form (ns-in-jar-entry jarfile entry)]
-        (second ns-form)))))
+          :when (clj? entry)
+          :let [ns-form (ns-in-jar-entry jarfile entry)]
+          :when ns-form]
+      (second ns-form))))
 
 (defn- split-classpath [classpath]
   (.split classpath (System/getProperty "path.separator")))
