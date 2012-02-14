@@ -17,8 +17,13 @@
   [rdr]
   (let [form (try (read rdr false ::done)
                   (catch Exception e ::done))]
-    (if (and (list? form) (= 'ns (first form)))
-      form
+    (if (try
+          (and (list? form) (= 'ns (first form)))
+          (catch Exception _))
+      (try
+        (str form) ;; force the read to read the whole form, throwing on error
+        (second form)
+        (catch Exception _))
       (when-not (= ::done form)
         (recur rdr)))))
 
@@ -29,7 +34,7 @@
         :when (clj? f)
         :let [ns-form (read-ns-form (PushbackReader. (io/reader f)))]
         :when ns-form]
-    (second ns-form)))
+    ns-form))
 
 (defn- ns-in-jar-entry [jarfile entry]
   (with-open [rdr (-> jarfile
@@ -45,7 +50,7 @@
           :when (clj? entry)
           :let [ns-form (ns-in-jar-entry jarfile entry)]
           :when ns-form]
-      (second ns-form))))
+      ns-form)))
 
 (defn- split-classpath [classpath]
   (.split classpath (System/getProperty "path.separator")))
