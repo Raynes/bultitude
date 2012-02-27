@@ -69,9 +69,10 @@
      (distinct
       (mapcat
        loader-classpath
-       (take-while
-        identity
-        (iterate #(.getParent %) classloader)))))
+       (reverse
+        (take-while
+         identity
+         (iterate #(.getParent %) classloader))))))
   ([] (classpath-files (clojure.lang.RT/baseLoader))))
 
 (defn- classpath->collection [classpath]
