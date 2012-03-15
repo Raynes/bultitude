@@ -7,7 +7,7 @@
 
 (defn- clj? [f]
   ;; Needs to work on JarEntries and Files, the former of which has no .isFile
-  (and (not (.isDirectory f)) (.endsWith (.getName f) ".clj")))
+  (and (.canRead f) (not (.isDirectory f)) (.endsWith (.getName f) ".clj")))
 
 (defn- jar? [f]
   (and (.isFile f) (.endsWith (.getName f) ".jar")))
