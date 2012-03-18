@@ -91,7 +91,9 @@
   (cond
     (.isDirectory f) (namespaces-in-dir
                       (if prefix
-                        (io/file f (.replaceAll prefix "\\." "/"))
+                        (io/file f (-> prefix
+                                       (.replaceAll "\\." "/")
+                                       (.replaceAll "-" "_")))
                         f))
     (jar? f) (let [ns-list (namespaces-in-jar f)]
                (if prefix

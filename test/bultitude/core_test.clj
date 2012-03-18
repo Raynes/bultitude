@@ -17,4 +17,8 @@
   (testing "directory"
     (is (=
          #{'bultitude.core 'bultitude.core-test}
-         (set (namespaces-on-classpath :prefix "bultitude"))))))
+         (set (namespaces-on-classpath :prefix "bultitude")))))
+  (testing "dash handling in prefixes"
+    (is (=
+         #{'bulti-tude.test}
+         (set (namespaces-on-classpath :prefix "bulti-tude"))))))
