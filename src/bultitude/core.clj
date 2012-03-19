@@ -109,7 +109,7 @@
   [& {:keys [prefix classpath] :or {classpath (classpath-files)}}]
   (mapcat
    (partial file->namespaces prefix)
-   (-> classpath classpath->collection classpath->files)))
+   (->> classpath classpath->collection classpath->files (filter #(.canRead %)))))
 
 (defn path-for
   "Transform a namespace into a .clj file path relative to classpath root."
