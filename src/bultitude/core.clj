@@ -7,7 +7,8 @@
 
 (defn- clj? [f]
   ;; Needs to work on JarEntries and Files, the former of which has no .isFile
-  (and (not (.isDirectory f)) (.endsWith (.getName f) ".clj")))
+  (and (not (.isDirectory f))
+       (.endsWith (.getName f) ".clj")))
 
 (defn- jar? [f]
   (and (.isFile f) (.endsWith (.getName f) ".jar")))
@@ -31,7 +32,7 @@
   "Return a seq of all namespaces found in Clojure source files in dir."
   [dir]
   (for [f (file-seq (io/file dir))
-        :when (clj? f)
+        :when (and (clj? f) (.canRead f))
         :let [ns-form (read-ns-form (PushbackReader. (io/reader f)))]
         :when ns-form]
     ns-form))
@@ -109,7 +110,9 @@
   [& {:keys [prefix classpath] :or {classpath (classpath-files)}}]
   (mapcat
    (partial file->namespaces prefix)
-   (->> classpath classpath->collection classpath->files (filter #(.canRead %)))))
+   (->> classpath
+        classpath->collection
+        classpath->files)))
 
 (defn path-for
   "Transform a namespace into a .clj file path relative to classpath root."
