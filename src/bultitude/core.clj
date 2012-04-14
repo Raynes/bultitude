@@ -33,7 +33,7 @@
   [dir]
   (for [f (file-seq (io/file dir))
         :when (and (clj? f) (.canRead f))
-        :let [ns-form (read-ns-form (PushbackReader. (io/reader f)))]
+        :let [ns-form (with-open [r (PushbackReader. (io/reader f))] (read-ns-form r))]
         :when ns-form]
     ns-form))
 
