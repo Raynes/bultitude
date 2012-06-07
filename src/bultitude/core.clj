@@ -2,6 +2,7 @@
   (:require [clojure.java.io :as io]
             [clojure.string :as string])
   (:import (java.util.jar JarFile)
+           (java.net URI URLDecoder)
            (java.io File BufferedReader PushbackReader InputStreamReader)
            (clojure.lang DynamicClassLoader)))
 
@@ -62,6 +63,19 @@
   (when (instance? java.net.URLClassLoader loader)
     (map
      #(java.io.File. (.getPath ^java.net.URL %))
+     (.getURLs ^java.net.URLClassLoader loader))))
+
+(defn loader-classpath
+  "Returns a sequence of File paths from a classloader."
+  [loader]
+  (when (instance? java.net.URLClassLoader loader)
+    (map
+     #(java.io.File.
+       (.getPath (URI. (.getProtocol ^java.net.URL %)
+                       nil
+                       (URLDecoder/decode (.getPath ^java.net.URL %) "UTF-8")
+                       nil
+                       nil)))
      (.getURLs ^java.net.URLClassLoader loader))))
 
 (defn classpath-files
