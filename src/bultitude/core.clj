@@ -62,14 +62,6 @@
   [loader]
   (when (instance? java.net.URLClassLoader loader)
     (map
-     #(java.io.File. (.getPath ^java.net.URL %))
-     (.getURLs ^java.net.URLClassLoader loader))))
-
-(defn loader-classpath
-  "Returns a sequence of File paths from a classloader."
-  [loader]
-  (when (instance? java.net.URLClassLoader loader)
-    (map
      #(java.io.File.
        (.getPath (URI. (.getProtocol ^java.net.URL %)
                        nil
