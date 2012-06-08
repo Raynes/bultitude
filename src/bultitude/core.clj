@@ -2,7 +2,6 @@
   (:require [clojure.java.io :as io]
             [clojure.string :as string])
   (:import (java.util.jar JarFile)
-           (java.net URI URLDecoder)
            (java.io File BufferedReader PushbackReader InputStreamReader)
            (clojure.lang DynamicClassLoader)))
 
@@ -61,14 +60,8 @@
   "Returns a sequence of File paths from a classloader."
   [loader]
   (when (instance? java.net.URLClassLoader loader)
-    (map
-     #(java.io.File.
-       (.getPath (URI. (.getProtocol ^java.net.URL %)
-                       nil
-                       (URLDecoder/decode (.getPath ^java.net.URL %) "UTF-8")
-                       nil
-                       nil)))
-     (.getURLs ^java.net.URLClassLoader loader))))
+    (map #(io/as-file %)
+         (.getURLs ^java.net.URLClassLoader loader))))
 
 (defn classpath-files
   "Returns a sequence of File objects of the elements on the classpath."
