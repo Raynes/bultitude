@@ -1,5 +1,7 @@
 # Bultitude
 
+[![Build Status](https://secure.travis-ci.org/Raynes/bultitude.png)](http://travis-ci.org/Raynes/bultitude)
+
 This library is a library similar to `clojure.tools.namespace`. It is
 designed to find namespaces on the classpath. This one was ripped from
 Leiningen's core because we decided it should be publically available to
