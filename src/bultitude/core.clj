@@ -2,6 +2,7 @@
   (:require [clojure.java.io :as io]
             [clojure.string :as string])
   (:import (java.util.jar JarFile)
+           (java.util.zip ZipException)
            (java.io File BufferedReader PushbackReader InputStreamReader)
            (clojure.lang DynamicClassLoader)))
 
@@ -46,12 +47,15 @@
     (read-ns-form rdr)))
 
 (defn- namespaces-in-jar [jar]
-  (let [jarfile (JarFile. jar)]
-    (for [entry (enumeration-seq (.entries jarfile))
-          :when (clj? entry)
-          :let [ns-form (ns-in-jar-entry jarfile entry)]
-          :when ns-form]
-      ns-form)))
+  (try 
+    (let [jarfile (JarFile. jar)]
+      (for [entry (enumeration-seq (.entries jarfile))
+            :when (clj? entry)
+            :let [ns-form (ns-in-jar-entry jarfile entry)]
+            :when ns-form]
+        ns-form))
+    (catch ZipException e 
+      (throw (Exception. (str "jar file corrupt: " jar) e)))))
 
 (defn- split-classpath [classpath]
   (.split classpath (System/getProperty "path.separator")))
