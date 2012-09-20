@@ -60,11 +60,21 @@
 (defn- split-classpath [classpath]
   (.split classpath (System/getProperty "path.separator")))
 
+
+(defprotocol ProvidesClasspath
+  "Capability to provide a pseudo-classpath as a seq of Files."
+  (get-classpath [loader]))
+
+(extend-type java.net.URLClassLoader
+  ProvidesClasspath
+  (get-classpath [loader]
+    (map io/as-file (.getURLs ^java.net.URLClassLoader loader))))
+
 (defn loader-classpath
   "Returns a sequence of File paths from a classloader."
   [loader]
-  (when (instance? java.net.URLClassLoader loader)
-    (map io/as-file (.getURLs ^java.net.URLClassLoader loader))))
+  (when (satisfies? ProvidesClasspath loader)
+    (get-classpath loader)))
 
 (defn classpath-files
   "Returns a sequence of File objects of the elements on the classpath."
