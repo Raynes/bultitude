@@ -48,8 +48,7 @@ user=> (b/namespaces-on-classpath :prefix "bultitude" :classpath "src:test")
 (bultitude.core bultitude.core-test)
 ```
 
-Note that the path separator needs to be whatever is used on your
-operating system. It can also be a collection of `File` objects. 
+Value for :classpath can either be a String containing paths (using the underlying operating system's path separator), or a collection of `File` objects. 
 
 ## The Name
 
