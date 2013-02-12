@@ -30,12 +30,15 @@
       (when-not (= ::done form)
         (recur rdr)))))
 
+(defn ns-form-for-file [file]
+  (with-open [r (PushbackReader. (io/reader file))] (read-ns-form r)))
+
 (defn namespaces-in-dir
   "Return a seq of all namespaces found in Clojure source files in dir."
   [dir]
   (for [f (file-seq (io/file dir))
         :when (and (clj? f) (.canRead f))
-        :let [ns-form (with-open [r (PushbackReader. (io/reader f))] (read-ns-form r))]
+        :let [ns-form (ns-form-for-file f)]
         :when ns-form]
     ns-form))
 
