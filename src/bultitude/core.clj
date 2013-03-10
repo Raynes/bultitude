@@ -2,17 +2,20 @@
   (:require [clojure.java.io :as io]
             [clojure.string :as string]
             [dynapath.util :as dp])
-  (:import (java.util.jar JarFile)
+  (:import (java.util.jar JarFile JarEntry)
            (java.util.zip ZipException)
            (java.io File BufferedReader PushbackReader InputStreamReader)
            (clojure.lang DynamicClassLoader)))
 
-(defn- clj? [f]
-  ;; Needs to work on JarEntries and Files, the former of which has no .isFile
+(defn- clj? [^File f]
   (and (not (.isDirectory f))
        (.endsWith (.getName f) ".clj")))
 
-(defn- jar? [f]
+(defn- clj-jar-entry? [^JarEntry f]
+  (and (not (.isDirectory f))
+       (.endsWith (.getName f) ".clj")))
+
+(defn- jar? [^File f]
   (and (.isFile f) (.endsWith (.getName f) ".jar")))
 
 (defn- read-ns-form
@@ -36,13 +39,13 @@
 (defn namespaces-in-dir
   "Return a seq of all namespaces found in Clojure source files in dir."
   [dir]
-  (for [f (file-seq (io/file dir))
+  (for [^File f (file-seq (io/file dir))
         :when (and (clj? f) (.canRead f))
         :let [ns-form (ns-form-for-file f)]
         :when ns-form]
     ns-form))
 
-(defn- ns-in-jar-entry [jarfile entry]
+(defn- ns-in-jar-entry [^JarFile jarfile ^JarEntry entry]
   (with-open [rdr (-> jarfile
                       (.getInputStream (.getEntry jarfile (.getName entry)))
                       InputStreamReader.
@@ -50,18 +53,18 @@
                       PushbackReader.)]
     (read-ns-form rdr)))
 
-(defn- namespaces-in-jar [jar]
-  (try 
+(defn- namespaces-in-jar [^File jar]
+  (try
     (let [jarfile (JarFile. jar)]
       (for [entry (enumeration-seq (.entries jarfile))
-            :when (clj? entry)
+            :when (clj-jar-entry? entry)
             :let [ns-form (ns-in-jar-entry jarfile entry)]
             :when ns-form]
         ns-form))
-    (catch ZipException e 
+    (catch ZipException e
       (throw (Exception. (str "jar file corrupt: " jar) e)))))
 
-(defn- split-classpath [classpath]
+(defn- split-classpath [^String classpath]
   (.split classpath (System/getProperty "path.separator")))
 
 (defn loader-classpath
@@ -87,7 +90,7 @@
   "Map a classpath file to the namespaces it contains. `prefix` allows for
    reducing the namespace search space. For large directories on the classpath,
    passing a `prefix` can provide significant efficiency gains."
-  [prefix f]
+  [^String prefix ^File f]
   (cond
     (.isDirectory f) (namespaces-in-dir
                       (if prefix
