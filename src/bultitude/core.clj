@@ -47,7 +47,7 @@
 
 (defn- ns-in-jar-entry [^JarFile jarfile ^JarEntry entry]
   (with-open [rdr (-> jarfile
-                      (.getInputStream (.getEntry jarfile (.getName entry)))
+                      (.getInputStream entry)
                       InputStreamReader.
                       BufferedReader.
                       PushbackReader.)]
