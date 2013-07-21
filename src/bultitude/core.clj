@@ -33,13 +33,8 @@
       (when-not (= ::done form)
         (recur rdr)))))
 
-(defn ns-form-for-file [file]  ;;; TODO: Will be unneeded
-  (with-open [r (PushbackReader. (io/reader file))] (read-ns-form r)))
 
-
-
-
-;;; ===== New functions: as yet unused
+;;; Classifying files
 
 (defn- starting-classification-for-standalone-file [file]
   {:file file
@@ -101,7 +96,7 @@
         ::broken-namespace   {:status :invalid-clojure-file}
                              {:status :contains-namespace, :namespace-symbol form}))))
 
-(defn extend-starting-classification [classification]
+(defn- extend-starting-classification [classification]
   (letfn [(grovel-through-bytes [] 
             (with-open [r (PushbackReader. ((:reader-maker classification)))]
               (describe-namespace-status r)))]
@@ -142,20 +137,15 @@
   (catch ZipException e
     (throw (Exception. (str "jar file corrupt: " jar) e)))))
 
-;;; =====
-
-
-
 
 
 (defn namespaces-in-dir
   "Return a seq of all namespaces found in Clojure source files in dir."
   [dir]
-  (for [^File f (file-seq (io/file dir))
-        :when (and (clj? f) (.canRead f))
-        :let [ns-form (ns-form-for-file f)]
-        :when ns-form]
-    ns-form))
+  (->> dir
+       classify-dir-entries
+       (filter has-valid-namespace?)
+       (map :namespace-symbol)))
 
 (defn- ns-in-jar-entry [^JarFile jarfile ^JarEntry entry]
   (with-open [rdr (-> jarfile
