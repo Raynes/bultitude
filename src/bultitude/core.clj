@@ -33,8 +33,120 @@
       (when-not (= ::done form)
         (recur rdr)))))
 
-(defn ns-form-for-file [file]
+(defn ns-form-for-file [file]  ;;; TODO: Will be unneeded
   (with-open [r (PushbackReader. (io/reader file))] (read-ns-form r)))
+
+
+
+
+;;; ===== New functions: as yet unused
+
+(defn- starting-classification-for-standalone-file [file]
+  {:file file
+   :source-type :standalone-file
+   :reader-maker #(io/reader file)})
+
+(defn- starting-classification-for-jar-entry [^JarFile jarfile jar-entry]
+  {:file jar-entry
+   :jarfile jarfile
+   :source-type :jar-entry
+   :reader-maker #(-> jarfile
+                      (.getInputStream jar-entry)
+                      InputStreamReader.
+                      BufferedReader.)})
+
+(defn- has-valid-namespace? [classification]
+  (= (:status classification) :contains-namespace))
+
+(defn- standalone-file? [classification]
+  (= (:source-type classification) :standalone-file))
+(def jar-entry? (complement standalone-file?))
+
+(defn- readable? [classification]
+  (or (jar-entry? classification)
+       (boolean (.canRead (:file classification)))))
+
+(defn- describe-namespace-status
+  "Produces a map describing whether a file is
+   * a clojure file with a namespace
+   * a clojure file that doesn't try to have a namespace
+   * a file that can't be parsed as Clojure."
+  [rdr]
+  (letfn [(plausible-ns-form? [form]
+            (if (and (list? form) (= 'ns (first form)))
+              (if (symbol? (second form))
+                true
+                (throw (Exception.))) ; not just implausible: flat out impossible/invalid.
+              false))
+            
+          (next-form []
+            (try 
+              (let [form (read rdr false ::done)]
+                (cond (= ::done form)
+                      ::done
+
+                      (plausible-ns-form? form)
+                      (do 
+                        (str form) ;; force the read to read the whole form, throwing on error
+                        (second form))
+
+                      :else 
+                      ::boring-form))
+              (catch Exception _
+                ::broken-namespace)))]
+    (loop [form (next-form)]
+      (condp = form
+        ::done               {:status :no-attempt-at-namespace}
+        ::boring-form        (recur (next-form))
+        ::broken-namespace   {:status :invalid-clojure-file}
+                             {:status :contains-namespace, :namespace-symbol form}))))
+
+(defn extend-starting-classification [classification]
+  (letfn [(grovel-through-bytes [] 
+            (with-open [r (PushbackReader. ((:reader-maker classification)))]
+              (describe-namespace-status r)))]
+    (if (not (readable? classification))
+      (assoc classification :status :unreadable)
+      (merge classification (grovel-through-bytes)))))
+
+(defn classify-dir-entries
+  "Looks for all Clojure (.clj) files in the directory tree rooted at `dir`, a string.
+   Returns a seq of maps.
+   Each map will contain one of four statuses:
+     :contains-namespace   (The namespace is the value of key `:namespace-symbol`.)
+     :unreadable
+     :no-namespace         (There is no `ns` form.)
+     :broken-namespace     (An `ns` entry in the file is malformed.)
+   The original java.io.File object is under key `:file`."
+  [dir]
+  (->> (file-seq (io/file dir))
+       (filter clj?)
+       (map starting-classification-for-standalone-file)
+       (map extend-starting-classification)))
+
+(defn classify-jar-entries [^File jar]
+  "Looks for all Clojure (.clj) files in the given jarfile.
+   Returns a seq of maps.
+   Each map will contain one of three statuses:
+     :contains-namespace   (The namespace is the value of key `:namespace-symbol`.)
+     :no-namespace         (There is no `ns` form.)
+     :broken-namespace     (An `ns` entry in the file is malformed.)
+   The original JarEntry object is under key `:file` (sic), and the original
+   jar is under :jar-file."
+  (try
+    (let [as-jar-file (JarFile. jar)]
+      (->> (enumeration-seq (.entries as-jar-file))
+           (filter clj-jar-entry?)
+           (map (partial starting-classification-for-jar-entry as-jar-file))
+           (map extend-starting-classification)))
+  (catch ZipException e
+    (throw (Exception. (str "jar file corrupt: " jar) e)))))
+
+;;; =====
+
+
+
+
 
 (defn namespaces-in-dir
   "Return a seq of all namespaces found in Clojure source files in dir."
