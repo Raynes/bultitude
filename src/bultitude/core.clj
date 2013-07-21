@@ -139,32 +139,21 @@
 
 
 
-(defn namespaces-in-dir
-  "Return a seq of all namespaces found in Clojure source files in dir."
-  [dir]
-  (->> dir
-       classify-dir-entries
+(defn- namespaces-in-x [x classifier]
+  (->> (classifier x)
        (filter has-valid-namespace?)
        (map :namespace-symbol)))
 
-(defn- ns-in-jar-entry [^JarFile jarfile ^JarEntry entry]
-  (with-open [rdr (-> jarfile
-                      (.getInputStream entry)
-                      InputStreamReader.
-                      BufferedReader.
-                      PushbackReader.)]
-    (read-ns-form rdr)))
+(defn namespaces-in-dir
+  "Return a seq of all namespaces found in Clojure source files in dir."
+  [dir]
+  (namespaces-in-x dir classify-dir-entries))
 
-(defn- namespaces-in-jar [^File jar]
-  (try
-    (let [jarfile (JarFile. jar)]
-      (for [entry (enumeration-seq (.entries jarfile))
-            :when (clj-jar-entry? entry)
-            :let [ns-form (ns-in-jar-entry jarfile entry)]
-            :when ns-form]
-        ns-form))
-    (catch ZipException e
-      (throw (Exception. (str "jar file corrupt: " jar) e)))))
+(defn- namespaces-in-jar
+  "Return a seq of all valid namespaces found in Clojure source files in the given jar."
+  [^File jar]
+  (namespaces-in-x jar classify-jar-entries))
+
 
 (defn- split-classpath [^String classpath]
   (.split classpath (System/getProperty "path.separator")))

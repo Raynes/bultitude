@@ -95,6 +95,11 @@
     (is (= expected (selected-actual result)))
     (is (= #{:standalone-file}  (set (map :source-type result))))))
 
+(deftest namespaces-in-dir-test
+  (is (= (set (namespaces-in-dir "test"))
+         (set '[bulti-tude.test bultitude.core-test]))))
+         
+
 (deftest classify-jar-entries-test
   (let [result (formatted-actual (classify-jar-entries (io/file "test/test.jar")))
         expected #{ {:status :contains-namespace
@@ -114,3 +119,7 @@
     (is (= #{:jar-entry}  (set (map :source-type result))))
     (is (= #{"test/test.jar"} (set (map #(.getName (:jarfile %)) result))))))
   
+(deftest namespaces-in-jar-test
+  (is (= (set (#'bultitude.core/namespaces-in-jar (io/file "test/test.jar")))
+         (set '[bulti-tude.test bultitude.core-test]))))
+         
