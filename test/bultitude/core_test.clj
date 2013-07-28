@@ -33,6 +33,75 @@
   (is (= '#{bulti-tude.test bultitude.core-test}
          (set (namespaces-in-dir "test")))))
 
+;; Don't know why `namespaces-in-jar` is private while `namespaces-in-dir` isn't.
+;; Since it is, it's tested below, in "utilities".
+
+
+;; The above functions are the main ones, but the following 
+;; are useful for tools that want to work with the namespace
+;; classifications rather than just namespaces.
+
+(deftest select-subdirectory-test
+  (is (= (io/file "./test/bulti_tude")
+         (select-subdirectory (io/file ".") "test.bulti-tude")))
+
+  (is (= (io/file "test")
+         (select-subdirectory (io/file "test") nil)))
+
+  (is (= (io/file "test")
+         (select-subdirectory (io/file "test") ""))))
+
+(deftest filter-by-prefix-test
+  (is (= '[bultitude.core]
+         (filter-by-prefix '[bultitude.core clojure.test] "bultitude")))
+  (is (= '[bultitude.core clojure.test]
+         (filter-by-prefix '[bultitude.core clojure.test] nil))))
+
+(defn formatted-actual [result-maps]
+  (set (map #(assoc % :file (.getName (:file %))) result-maps)))
+
+(defn selected-actual [formatted-actual]
+  (set (map #(select-keys % [:namespace-symbol :status :file])
+            formatted-actual)))
+
+(deftest classify-dir-entries-test
+  (let [result (formatted-actual  (classify-dir-entries "test"))
+        expected #{ {:status :contains-namespace
+                     :file "test.clj"
+                     :namespace-symbol 'bulti-tude.test}
+                    
+                    {:status :no-attempt-at-namespace
+                     :file "clojure-file-without-a-namespace.clj"}
+                    
+                    {:status :contains-namespace
+                     :file "core_test.clj"
+                     :namespace-symbol 'bultitude.core-test}
+                    
+                    {:status :invalid-clojure-file
+                     :file "invalid.clj"}}]
+
+    (is (= expected (selected-actual result)))
+    (is (= #{:standalone-file}  (set (map :source-type result))))))
+
+(deftest classify-jar-entries-test
+  (let [result (formatted-actual (classify-jar-entries (io/file "test/test.jar")))
+        expected #{ {:status :contains-namespace
+                     :file "bulti_tude/test.clj"
+                     :namespace-symbol 'bulti-tude.test}
+                    
+                    {:status :no-attempt-at-namespace
+                     :file "bultitude/clojure-file-without-a-namespace.clj"}
+                    
+                    {:status :contains-namespace
+                     :file "bultitude/core_test.clj"
+                     :namespace-symbol 'bultitude.core-test}
+                    
+                    {:status :invalid-clojure-file
+                     :file "bultitude/invalid.clj"}}]
+    (is (= expected (selected-actual result)))
+    (is (= #{:jar-entry}  (set (map :source-type result))))
+    (is (= #{"test/test.jar"} (set (map #(.getName (:jarfile %)) result))))))
+
 
 ;;; Utilities
 
@@ -67,58 +136,6 @@
            (subject (as-reader "(ns foo]"))))))
     
 
-
-
-(defn formatted-actual [result-maps]
-  (set (map #(assoc % :file (.getName (:file %))) result-maps)))
-
-(defn selected-actual [formatted-actual]
-  (set (map #(select-keys % [:namespace-symbol :status :file])
-            formatted-actual)))
-
-(deftest classify-dir-entries-test
-  (let [result (formatted-actual  (classify-dir-entries "test"))
-        expected #{ {:status :contains-namespace
-                     :file "test.clj"
-                     :namespace-symbol 'bulti-tude.test}
-                    
-                    {:status :no-attempt-at-namespace
-                     :file "clojure-file-without-a-namespace.clj"}
-                    
-                    {:status :contains-namespace
-                     :file "core_test.clj"
-                     :namespace-symbol 'bultitude.core-test}
-                    
-                    {:status :invalid-clojure-file
-                     :file "invalid.clj"}}]
-
-    (is (= expected (selected-actual result)))
-    (is (= #{:standalone-file}  (set (map :source-type result))))))
-
-(deftest namespaces-in-dir-test
-  (is (= (set (namespaces-in-dir "test"))
-         (set '[bulti-tude.test bultitude.core-test]))))
-         
-
-(deftest classify-jar-entries-test
-  (let [result (formatted-actual (classify-jar-entries (io/file "test/test.jar")))
-        expected #{ {:status :contains-namespace
-                     :file "bulti_tude/test.clj"
-                     :namespace-symbol 'bulti-tude.test}
-                    
-                    {:status :no-attempt-at-namespace
-                     :file "bultitude/clojure-file-without-a-namespace.clj"}
-                    
-                    {:status :contains-namespace
-                     :file "bultitude/core_test.clj"
-                     :namespace-symbol 'bultitude.core-test}
-                    
-                    {:status :invalid-clojure-file
-                     :file "bultitude/invalid.clj"}}]
-    (is (= expected (selected-actual result)))
-    (is (= #{:jar-entry}  (set (map :source-type result))))
-    (is (= #{"test/test.jar"} (set (map #(.getName (:jarfile %)) result))))))
-  
 (deftest namespaces-in-jar-test
   (is (= (set (#'bultitude.core/namespaces-in-jar (io/file "test/test.jar")))
          (set '[bulti-tude.test bultitude.core-test]))))

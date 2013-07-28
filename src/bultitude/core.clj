@@ -177,22 +177,44 @@
 (defn- classpath->files [classpath]
   (map io/file classpath))
 
+(defn select-subdirectory
+  "`dir` is the root of a directory hierarchy. Branches (subdirectories)
+  of that hierarchy are described in Clojure namespace notation. The branch
+  so described is returned as a ^File.
+
+  A `nil` namespace or empty string means the entire hierarchy.
+
+  Example:
+    (extend-directory-with-namespace (io/file \".\") \"a.b-test\")
+    => (io/file \"./a/b_test\")"
+  [^File dir namespace]
+  (if namespace
+    (io/file dir (-> namespace
+                     (.replaceAll "\\." "/")
+                     (.replaceAll "-" "_")))
+    dir))
+
+(defn filter-by-prefix
+  "Given a list of namespaces, retain only those whose names
+   begin with the given prefix. A `nil` prefix means everything
+   is to be retained."
+
+  ;; Not describing what `and` does below. As far as I can guess,
+  ;; it's just to make the function produce a nil result from a
+  ;; nil input (instead of the empty sequence you'd otherwise get.
+  [namespaces prefix]
+  (if prefix
+    (filter #(and % (.startsWith (name %) prefix)) namespaces)
+    namespaces))
+
 (defn file->namespaces
   "Map a classpath file to the namespaces it contains. `prefix` allows for
    reducing the namespace search space. For large directories on the classpath,
    passing a `prefix` can provide significant efficiency gains."
   [^String prefix ^File f]
   (cond
-    (.isDirectory f) (namespaces-in-dir
-                      (if prefix
-                        (io/file f (-> prefix
-                                       (.replaceAll "\\." "/")
-                                       (.replaceAll "-" "_")))
-                        f))
-    (jar? f) (let [ns-list (namespaces-in-jar f)]
-               (if prefix
-                 (filter #(and % (.startsWith (name %) prefix)) ns-list)
-                 ns-list))))
+    (.isDirectory f) (namespaces-in-dir (select-subdirectory f prefix))
+    (jar? f)         (filter-by-prefix (namespaces-in-jar f) prefix)))
 
 (defn namespaces-on-classpath
   "Return symbols of all namespaces matching the given prefix both on disk and
