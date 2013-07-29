@@ -107,7 +107,7 @@
 (defn classify-dir-entries
   "Looks for all Clojure (.clj) files in the directory tree rooted at `dir`, a string.
    Returns a seq of maps.
-   Each map will contain one of four statuses:
+   Each map will contain one of four values for the `:status` key:
      :contains-namespace   (The namespace is the value of key `:namespace-symbol`.)
      :unreadable
      :no-namespace         (There is no `ns` form.)
@@ -122,7 +122,7 @@
 (defn classify-jar-entries [^File jar]
   "Looks for all Clojure (.clj) files in the given jarfile.
    Returns a seq of maps.
-   Each map will contain one of three statuses:
+   Each map will contain one of three values for the `:status` key:
      :contains-namespace   (The namespace is the value of key `:namespace-symbol`.)
      :no-namespace         (There is no `ns` form.)
      :broken-namespace     (An `ns` entry in the file is malformed.)
