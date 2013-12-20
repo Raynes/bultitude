@@ -1,6 +1,23 @@
 (ns bultitude.core-test
+  (:require [clojure.java.io :as io])
   (:use clojure.test
         bultitude.core))
+
+(deftest namespaces-in-dir-test
+  (testing namespaces-in-dir
+    (is (= '(bulti-tude.test) (namespaces-in-dir "test/bulti_tude")))))
+
+(deftest namespaces-forms-in-dir-test
+  (testing namespace-forms-in-dir
+    (is (= '((ns bulti-tude.test)) (namespace-forms-in-dir "test/bulti_tude")))))
+
+(deftest file->namespaces-test
+  (testing "on a directory with a clj in it"
+    (is (= '(bulti-tude.test) (file->namespaces nil (io/file "test/bulti_tude"))))))
+
+(deftest file->namespace-forms-test
+  (testing "on a directory with a clj in it"
+    (is (= '((ns bulti-tude.test)) (file->namespace-forms nil (io/file "test/bulti_tude"))))))
 
 (deftest namespaces-on-classpath-test
   (testing "find clojure.core"
@@ -22,6 +39,12 @@
     (is (=
          #{'bulti-tude.test}
          (set (namespaces-on-classpath :prefix "bulti-tude"))))))
+
+(deftest namespace-forms-on-classpath-test
+  (testing namespace-forms-on-classpath
+    (is (every?
+         #(= 'ns (first %))
+         (namespace-forms-on-classpath)))))
 
 (defn test-doc-from-ns-form-helper 
   [docstring ns-form]
