@@ -123,3 +123,13 @@
            (.replace \- \_)
            (.replace \. \/))
        ".clj"))
+
+(defn doc-from-ns-form
+  "Extract the docstring from a given ns form without evaluating the form. The docstring returned should be the return value of (:doc (meta namespace-symbol)) if the ns-form were to be evaluated."
+  [ns-form]
+  (let [meta-docstring (:doc (meta (second ns-form)))
+        references (next (next ns-form))
+        docstring (when (string? (first references)) (first references))
+        references (if docstring (next references) references)
+        attribute-docstring (:doc (when (map? (first references)) (first references)))]
+    (or attribute-docstring docstring meta-docstring)))
