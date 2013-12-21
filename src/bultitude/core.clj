@@ -123,3 +123,8 @@
            (.replace \- \_)
            (.replace \. \/))
        ".clj"))
+
+(defn doc-from-ns-form
+  "Extract the docstring from a given ns form without evaluating the form. The docstring returned should be the return value of (:doc (meta namespace-symbol)) if the ns-form were to be evaluated."
+  [ns-form]
+  (:doc (meta (second (second (second (macroexpand ns-form)))))))
