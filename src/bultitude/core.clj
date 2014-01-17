@@ -115,7 +115,10 @@
                         f))
     (jar? f) (let [ns-list (namespace-forms-in-jar f)]
                (if prefix
-                 (filter #(and (second %) (.startsWith (name (second %)) prefix)) ns-list)
+                 (for [nspace ns-list
+                       :let [sym (second nspace)]
+                       :when (and sym (.startsWith (name sym) prefix))]
+                   nspace)
                  ns-list))))
 
 
