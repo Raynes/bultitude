@@ -7,6 +7,9 @@
            (java.io File BufferedReader PushbackReader InputStreamReader)
            (clojure.lang DynamicClassLoader)))
 
+(declare namespace-forms-in-dir
+         file->namespace-forms)
+
 (defn- clj? [^File f]
   (and (not (.isDirectory f))
        (.endsWith (.getName f) ".clj")))
@@ -28,7 +31,7 @@
           (catch Exception _))
       (try
         (str form) ;; force the read to read the whole form, throwing on error
-        (second form)
+        form
         (catch Exception _))
       (when-not (= ::done form)
         (recur rdr)))))
@@ -39,13 +42,18 @@
 (defn namespaces-in-dir
   "Return a seq of all namespaces found in Clojure source files in dir."
   [dir]
+  (map second (namespace-forms-in-dir dir)))
+
+(defn namespace-forms-in-dir
+  "Return a seq of all namespace forms found in Clojure source files in dir."
+  [dir]
   (for [^File f (file-seq (io/file dir))
         :when (and (clj? f) (.canRead f))
         :let [ns-form (ns-form-for-file f)]
         :when ns-form]
     ns-form))
 
-(defn- ns-in-jar-entry [^JarFile jarfile ^JarEntry entry]
+(defn- ns-form-in-jar-entry [^JarFile jarfile ^JarEntry entry]
   (with-open [rdr (-> jarfile
                       (.getInputStream entry)
                       InputStreamReader.
@@ -53,12 +61,12 @@
                       PushbackReader.)]
     (read-ns-form rdr)))
 
-(defn- namespaces-in-jar [^File jar]
+(defn- namespace-forms-in-jar [^File jar]
   (try
     (let [jarfile (JarFile. jar)]
       (for [entry (enumeration-seq (.entries jarfile))
             :when (clj-jar-entry? entry)
-            :let [ns-form (ns-in-jar-entry jarfile entry)]
+            :let [ns-form (ns-form-in-jar-entry jarfile entry)]
             :when ns-form]
         ns-form))
     (catch ZipException e
@@ -91,17 +99,38 @@
    reducing the namespace search space. For large directories on the classpath,
    passing a `prefix` can provide significant efficiency gains."
   [^String prefix ^File f]
+  (map second (file->namespace-forms prefix f)))
+
+(defn file->namespace-forms
+  "Map a classpath file to the namespace forms it contains. `prefix` allows for
+   reducing the namespace search space. For large directories on the classpath,
+   passing a `prefix` can provide significant efficiency gains."
+  [^String prefix ^File f]
   (cond
-    (.isDirectory f) (namespaces-in-dir
+    (.isDirectory f) (namespace-forms-in-dir
                       (if prefix
                         (io/file f (-> prefix
                                        (.replaceAll "\\." "/")
                                        (.replaceAll "-" "_")))
                         f))
-    (jar? f) (let [ns-list (namespaces-in-jar f)]
+    (jar? f) (let [ns-list (namespace-forms-in-jar f)]
                (if prefix
-                 (filter #(and % (.startsWith (name %) prefix)) ns-list)
+                 (filter #(and (second %) (.startsWith (name (second %)) prefix)) ns-list)
                  ns-list))))
+
+
+(defn namespace-forms-on-classpath
+  "Returs the namespaces forms matching the given prefix both on disk and
+  inside jar files. If :prefix is passed, only return namespaces that begin with
+  this prefix. If :classpath is passed, it should be a seq of File objects or a
+  classpath string. If it is not passed, default to java.class.path and the
+  current classloader, assuming it is a dynamic classloader."
+  [& {:keys [prefix classpath] :or {classpath (classpath-files)}}]
+  (mapcat
+   (partial file->namespace-forms prefix)
+   (->> classpath
+        classpath->collection
+        classpath->files)))
 
 (defn namespaces-on-classpath
   "Return symbols of all namespaces matching the given prefix both on disk and
@@ -109,12 +138,8 @@
   this prefix. If :classpath is passed, it should be a seq of File objects or a
   classpath string. If it is not passed, default to java.class.path and the
   current classloader, assuming it is a dynamic classloader."
-  [& {:keys [prefix classpath] :or {classpath (classpath-files)}}]
-  (mapcat
-   (partial file->namespaces prefix)
-   (->> classpath
-        classpath->collection
-        classpath->files)))
+  [& args]
+  (map second (apply namespace-forms-on-classpath args)))
 
 (defn path-for
   "Transform a namespace into a .clj file path relative to classpath root."
