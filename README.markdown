@@ -21,7 +21,7 @@ user=> (b/namespaces-on-classpath :prefix "bultitude" :classpath "src:test")
 
 Value for :classpath can either be a String containing paths (using the underlying operating system's path separator), or a collection of `File` objects. 
 
-By default Bultitude will ignore files that have unreadable `ns` forms in them in order not to cause problems with projects that include [moustache templates](https://github.com/davidsantiago/stencil) on their classpath. Many functions take an `ignore-unreadable?` arg which you can set to false to make it propagate exceptions from the reader.
+By default Bultitude will ignore files that have unreadable `ns` forms in them in order not to cause problems with projects that include [moustache templates](https://github.com/davidsantiago/stencil) on their classpath. Most functions take an `ignore-unreadable?` arg which you can set to false to make it propagate exceptions from the reader.
 
 ## The Name
 
