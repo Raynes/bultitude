@@ -78,3 +78,7 @@
        "Attribute-Docstring"
        '(ns ^{:doc "Meta-Docstring"} all-doc-namespace-name "Docstring" {:doc "Attribute-Docstring"}))
       (in-ns callee-ns-name))))
+
+(deftest test-invalid-namespace
+  (is (thrown? Exception
+               (ns-form-for-file (io/file "test/bultitude/invalid.clj" true)))))

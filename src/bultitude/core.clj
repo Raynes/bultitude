@@ -23,35 +23,39 @@
 
 (defn- read-ns-form
   "Given a reader on a Clojure source file, read until an ns form is found."
-  [rdr]
-  (let [form (try (read rdr false ::done)
-                  (catch Exception e ::done))]
-    (if (try
-          (and (list? form) (= 'ns (first form)))
-          (catch Exception _))
-      (try
-        (str form) ;; force the read to read the whole form, throwing on error
-        form
-        (catch Exception _))
-      (when-not (= ::done form)
-        (recur rdr)))))
+  ([rdr] (read-ns-form rdr true))
+  ([rdr ignore-unreadable?]
+     (let [form (try (read rdr false ::done)
+                     (catch Exception e
+                       (if ignore-unreadable?
+                         ::done
+                         (throw e))))]
+       (if (and (list? form) (= 'ns (first form)))
+         form
+         (when-not (= ::done form)
+           (recur rdr ignore-unreadable?))))))
 
-(defn ns-form-for-file [file]
-  (with-open [r (PushbackReader. (io/reader file))] (read-ns-form r)))
+(defn ns-form-for-file
+  ([file] (ns-form-for-file file true))
+  ([file ignore-unreadable?]
+     (with-open [r (PushbackReader. (io/reader file))]
+       (read-ns-form r ignore-unreadable?))))
 
 (defn namespaces-in-dir
   "Return a seq of all namespaces found in Clojure source files in dir."
-  [dir]
-  (map second (namespace-forms-in-dir dir)))
+  ([dir] (namespaces-in-dir dir true))
+  ([dir ignore-unreadable?]
+     (map second (namespace-forms-in-dir dir ignore-unreadable?))))
 
 (defn namespace-forms-in-dir
   "Return a seq of all namespace forms found in Clojure source files in dir."
-  [dir]
-  (for [^File f (file-seq (io/file dir))
-        :when (and (clj? f) (.canRead f))
-        :let [ns-form (ns-form-for-file f)]
-        :when ns-form]
-    ns-form))
+  ([dir] (namespace-forms-in-dir dir true))
+  ([dir ignore-unreadable?]
+     (for [^File f (file-seq (io/file dir))
+           :when (and (clj? f) (.canRead f))
+           :let [ns-form (ns-form-for-file f ignore-unreadable?)]
+           :when ns-form]
+       ns-form)))
 
 (defn- ns-form-in-jar-entry [^JarFile jarfile ^JarEntry entry]
   (with-open [rdr (-> jarfile
