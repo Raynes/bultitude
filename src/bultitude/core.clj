@@ -57,24 +57,29 @@
            :when ns-form]
        ns-form)))
 
-(defn- ns-form-in-jar-entry [^JarFile jarfile ^JarEntry entry]
-  (with-open [rdr (-> jarfile
-                      (.getInputStream entry)
-                      InputStreamReader.
-                      BufferedReader.
-                      PushbackReader.)]
-    (read-ns-form rdr)))
+(defn- ns-form-in-jar-entry
+  ([jarfile entry] (ns-form-in-jar-entry jarfile entry true))
+  ([^JarFile jarfile ^JarEntry entry ignore-unreadable?]
+     (with-open [rdr (-> jarfile
+                         (.getInputStream entry)
+                         InputStreamReader.
+                         BufferedReader.
+                         PushbackReader.)]
+       (read-ns-form rdr ignore-unreadable?))))
 
-(defn- namespace-forms-in-jar [^File jar]
-  (try
-    (let [jarfile (JarFile. jar)]
-      (for [entry (enumeration-seq (.entries jarfile))
-            :when (clj-jar-entry? entry)
-            :let [ns-form (ns-form-in-jar-entry jarfile entry)]
-            :when ns-form]
-        ns-form))
-    (catch ZipException e
-      (throw (Exception. (str "jar file corrupt: " jar) e)))))
+(defn- namespace-forms-in-jar
+  ([jar] (namespace-forms-in-jar jar true))
+  ([^File jar ignore-unreadable?]
+     (try
+       (let [jarfile (JarFile. jar)]
+         (for [entry (enumeration-seq (.entries jarfile))
+               :when (clj-jar-entry? entry)
+               :let [ns-form (ns-form-in-jar-entry jarfile entry
+                                                   ignore-unreadable?)]
+               :when ns-form]
+           ns-form))
+       (catch ZipException e
+         (throw (Exception. (str "jar file corrupt: " jar) e))))))
 
 (defn- split-classpath [^String classpath]
   (.split classpath (System/getProperty "path.separator")))
@@ -109,22 +114,22 @@
   "Map a classpath file to the namespace forms it contains. `prefix` allows for
    reducing the namespace search space. For large directories on the classpath,
    passing a `prefix` can provide significant efficiency gains."
-  [^String prefix ^File f]
-  (cond
-   (.isDirectory f) (namespace-forms-in-dir
-                     (if prefix
-                       (io/file f (-> prefix
-                                      (.replaceAll "\\." "/")
-                                      (.replaceAll "-" "_")))
-                       f))
-   (jar? f) (let [ns-list (namespace-forms-in-jar f)]
-              (if prefix
-                (for [nspace ns-list
-                      :let [sym (second nspace)]
-                      :when (and sym (.startsWith (name sym) prefix))]
-                  nspace)
-                ns-list))))
-
+  ([prefix f] (file->namespace-forms prefix f true))
+  ([^String prefix ^File f ignore-unreadable?]
+     (cond
+      (.isDirectory f) (namespace-forms-in-dir
+                        (if prefix
+                          (io/file f (-> prefix
+                                         (.replaceAll "\\." "/")
+                                         (.replaceAll "-" "_")))
+                          f) ignore-unreadable?)
+      (jar? f) (let [ns-list (namespace-forms-in-jar f ignore-unreadable?)]
+                 (if prefix
+                   (for [nspace ns-list
+                         :let [sym (second nspace)]
+                         :when (and sym (.startsWith (name sym) prefix))]
+                     nspace)
+                   ns-list)))))
 
 (defn namespace-forms-on-classpath
   "Returs the namespaces forms matching the given prefix both on disk and
@@ -132,9 +137,10 @@
   this prefix. If :classpath is passed, it should be a seq of File objects or a
   classpath string. If it is not passed, default to java.class.path and the
   current classloader, assuming it is a dynamic classloader."
-  [& {:keys [prefix classpath] :or {classpath (classpath-files)}}]
+  [& {:keys [prefix classpath ignore-unreadable?]
+      :or {classpath (classpath-files) ignore-unreadable? true}}]
   (mapcat
-   (partial file->namespace-forms prefix)
+   #(file->namespace-forms prefix % ignore-unreadable?)
    (->> classpath
         classpath->collection
         classpath->files)))
