@@ -107,19 +107,19 @@
    passing a `prefix` can provide significant efficiency gains."
   [^String prefix ^File f]
   (cond
-    (.isDirectory f) (namespace-forms-in-dir
-                      (if prefix
-                        (io/file f (-> prefix
-                                       (.replaceAll "\\." "/")
-                                       (.replaceAll "-" "_")))
-                        f))
-    (jar? f) (let [ns-list (namespace-forms-in-jar f)]
-               (if prefix
-                 (for [nspace ns-list
-                       :let [sym (second nspace)]
-                       :when (and sym (.startsWith (name sym) prefix))]
-                   nspace)
-                 ns-list))))
+   (.isDirectory f) (namespace-forms-in-dir
+                     (if prefix
+                       (io/file f (-> prefix
+                                      (.replaceAll "\\." "/")
+                                      (.replaceAll "-" "_")))
+                       f))
+   (jar? f) (let [ns-list (namespace-forms-in-jar f)]
+              (if prefix
+                (for [nspace ns-list
+                      :let [sym (second nspace)]
+                      :when (and sym (.startsWith (name sym) prefix))]
+                  nspace)
+                ns-list))))
 
 
 (defn namespace-forms-on-classpath

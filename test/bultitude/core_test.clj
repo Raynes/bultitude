@@ -46,35 +46,35 @@
          #(= 'ns (first %))
          (namespace-forms-on-classpath)))))
 
-(defn test-doc-from-ns-form-helper 
+(defn test-doc-from-ns-form-helper
   [docstring ns-form]
   (eval ns-form)
   (is (=  docstring
           (:doc (meta *ns*))
           (doc-from-ns-form ns-form))))
- 
+
 (deftest doc-from-ns-form-test
   (testing "doc-from-ns-form"
     (let [callee-ns-name (ns-name *ns*)]
-      (test-doc-from-ns-form-helper 
-       nil 
+      (test-doc-from-ns-form-helper
+       nil
        '(ns no-doc-namespace-name))
-      (test-doc-from-ns-form-helper 
-       "Docstring" 
+      (test-doc-from-ns-form-helper
+       "Docstring"
        '(ns regular-doc-namespace-name "Docstring"))
-      (test-doc-from-ns-form-helper 
-       "Attribute-Docstring" 
+      (test-doc-from-ns-form-helper
+       "Attribute-Docstring"
        '(ns attribute-doc-namepsace-name {:doc "Attribute-Docstring"}))
-      (test-doc-from-ns-form-helper 
-       "Meta-Docstring" 
+      (test-doc-from-ns-form-helper
+       "Meta-Docstring"
        '(ns ^{:doc "Meta-Docstring"} meta-doc-namespace-name))
-      (test-doc-from-ns-form-helper 
-       "Docstring" 
+      (test-doc-from-ns-form-helper
+       "Docstring"
        '(ns ^{:doc "Meta-Docstring"} meta-and-reg-doc-namespace-name "Docstring"))
-      (test-doc-from-ns-form-helper 
-       "Attribute-Docstring" 
+      (test-doc-from-ns-form-helper
+       "Attribute-Docstring"
        '(ns reg-and-attribute-doc-namespace-name "Docstring" {:doc "Attribute-Docstring"}))
-      (test-doc-from-ns-form-helper 
-       "Attribute-Docstring" 
+      (test-doc-from-ns-form-helper
+       "Attribute-Docstring"
        '(ns ^{:doc "Meta-Docstring"} all-doc-namespace-name "Docstring" {:doc "Attribute-Docstring"}))
       (in-ns callee-ns-name))))
