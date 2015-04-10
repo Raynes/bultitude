@@ -12,11 +12,14 @@
 
 (defn- clj? [^File f]
   (and (not (.isDirectory f))
-       (.endsWith (.getName f) ".clj")))
+       (or (.endsWith (.getName f) ".clj")
+           (.endsWith (.getName f) ".cljc"))))
 
 (defn- clj-jar-entry? [^JarEntry f]
   (and (not (.isDirectory f))
-       (.endsWith (.getName f) ".clj")))
+       (let [name (.getName f)]
+         (or (.endsWith (.getName f) ".clj")
+             (.endsWith (.getName f) ".cljc")))))
 
 (defn- jar? [^File f]
   (and (.isFile f) (.endsWith (.getName f) ".jar")))
