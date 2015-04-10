@@ -5,19 +5,23 @@
 
 (deftest namespaces-in-dir-test
   (testing namespaces-in-dir
-    (is (= '(bulti-tude.test) (namespaces-in-dir "test/bulti_tude")))))
+    (is (= #{'bulti-tude.test 'bulti-tude.test-cljc}
+           (set (namespaces-in-dir "test/bulti_tude"))))))
 
 (deftest namespaces-forms-in-dir-test
   (testing namespace-forms-in-dir
-    (is (= '((ns bulti-tude.test)) (namespace-forms-in-dir "test/bulti_tude")))))
+    (is (= #{'(ns bulti-tude.test) '(ns bulti-tude.test-cljc)}
+           (set (namespace-forms-in-dir "test/bulti_tude"))))))
 
 (deftest file->namespaces-test
   (testing "on a directory with a clj in it"
-    (is (= '(bulti-tude.test) (file->namespaces nil (io/file "test/bulti_tude"))))))
+    (is (= #{'bulti-tude.test 'bulti-tude.test-cljc}
+           (set (file->namespaces nil (io/file "test/bulti_tude")))))))
 
 (deftest file->namespace-forms-test
   (testing "on a directory with a clj in it"
-    (is (= '((ns bulti-tude.test)) (file->namespace-forms nil (io/file "test/bulti_tude"))))))
+    (is (= #{'(ns bulti-tude.test) '(ns bulti-tude.test-cljc)}
+           (set (file->namespace-forms nil (io/file "test/bulti_tude")))))))
 
 (deftest namespaces-on-classpath-test
   (testing "find clojure.core"
@@ -37,7 +41,7 @@
          (set (namespaces-on-classpath :prefix "bultitude")))))
   (testing "dash handling in prefixes"
     (is (=
-         #{'bulti-tude.test}
+         #{'bulti-tude.test 'bulti-tude.test-cljc}
          (set (namespaces-on-classpath :prefix "bulti-tude"))))))
 
 (deftest namespace-forms-on-classpath-test
