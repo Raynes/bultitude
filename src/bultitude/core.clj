@@ -10,13 +10,12 @@
 (declare namespace-forms-in-dir
          file->namespace-forms)
 
-(defn- clj? [^File f]
-  (and (not (.isDirectory f))
-       (.endsWith (.getName f) ".clj")))
+(defn- clojure-source-file? [^File f]
+  (and (.isFile f)
+       (re-matches #".*\.cljc?" (.getName f))))
 
-(defn- clj-jar-entry? [^JarEntry f]
-  (and (not (.isDirectory f))
-       (.endsWith (.getName f) ".clj")))
+(defn- clojure-source-jar-entry? [^JarEntry f]
+  (re-matches #".*\.cljc?" (.getName f)))
 
 (defn- jar? [^File f]
   (and (.isFile f) (.endsWith (.getName f) ".jar")))
@@ -52,7 +51,7 @@
   ([dir] (namespace-forms-in-dir dir true))
   ([dir ignore-unreadable?]
      (for [^File f (file-seq (io/file dir))
-           :when (and (clj? f) (.canRead f))
+           :when (and (clojure-source-file? f) (.canRead f))
            :let [ns-form (ns-form-for-file f ignore-unreadable?)]
            :when ns-form]
        ns-form)))
@@ -73,7 +72,7 @@
      (try
        (let [jarfile (JarFile. jar)]
          (for [entry (enumeration-seq (.entries jarfile))
-               :when (clj-jar-entry? entry)
+               :when (clojure-source-jar-entry? entry)
                :let [ns-form (ns-form-in-jar-entry jarfile entry
                                                    ignore-unreadable?)]
                :when ns-form]
@@ -155,12 +154,14 @@
   (map second (apply namespace-forms-on-classpath args)))
 
 (defn path-for
-  "Transform a namespace into a .clj file path relative to classpath root."
-  [namespace]
-  (str (-> (str namespace)
-           (.replace \- \_)
-           (.replace \. \/))
-       ".clj"))
+  "Transform a namespace into a file path relative to classpath root, using the given extension (.clj default)."
+  ([namespace]
+    (path-for namespace "clj"))
+  ([namespace extension]
+   (str (-> (str namespace)
+            (.replace \- \_)
+            (.replace \. \/))
+        "." extension)))
 
 (defn doc-from-ns-form
   "Extract the docstring from a given ns form without evaluating the form. The docstring returned should be the return value of (:doc (meta namespace-symbol)) if the ns-form were to be evaluated."
