@@ -1,4 +1,4 @@
-(defproject bultitude "0.2.7"
+(defproject bultitude "0.2.8-SNAPSHOT"
   :min-lein-version "2.0.0"
   :description "A library for find Clojure namespaces on the classpath."
   :url "https://github.com/Raynes/bultitude"
