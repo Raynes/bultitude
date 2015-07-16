@@ -10,6 +10,13 @@
 (declare namespace-forms-in-dir
          file->namespace-forms)
 
+(def ^:dynamic *read-cond*
+  (if (or (< 1 (:major *clojure-version*))
+          (and (= 1 (:major *clojure-version*))
+               (<= 7 (:minor *clojure-version*))))
+    {:read-cond :allow}
+    nil))
+
 (defn- clojure-source-file? [^File f]
   (and (.isFile f)
        (re-matches #".*\.cljc?" (.getName f))))
@@ -24,7 +31,9 @@
   "Given a reader on a Clojure source file, read until an ns form is found."
   ([rdr] (read-ns-form rdr true))
   ([rdr ignore-unreadable?]
-     (let [form (try (read rdr false ::done)
+     (let [form (try (if *read-cond*
+                       (read (assoc *read-cond* :eof ::done) rdr)
+                       (read rdr false ::done))
                      (catch Exception e
                        (if ignore-unreadable?
                          ::done
