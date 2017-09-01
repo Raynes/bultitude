@@ -31,7 +31,7 @@ I don't know. You'd have to ask [Phil](http://technomancy.us) about that one.
 
 This library is a library similar to `clojure.tools.namespace`. It is
 designed to find namespaces on the classpath. This one was ripped from
-Leiningen's core because we decided it should be publically available to
+Leiningen's core because we decided it should be publicly available to
 everyone.
 
 This library was originally devised in Leiningen because Leiningen had a
