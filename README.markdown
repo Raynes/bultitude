@@ -1,6 +1,6 @@
 # Bultitude
 
-[![Build Status](https://secure.travis-ci.org/Raynes/bultitude.png)](http://travis-ci.org/Raynes/bultitude)
+[![Build Status](https://secure.travis-ci.org/timofreiberg/bultitude.png)](http://travis-ci.org/timofreiberg/bultitude)
 
 Bultitude is a library for finding namespaces on the classpath.
 
