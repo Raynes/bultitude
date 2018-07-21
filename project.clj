@@ -1,6 +1,5 @@
 (defproject bultitude "0.2.8"
-  :min-lein-version "2.0.0"
-  :description "A library for find Clojure namespaces on the classpath."
+  :description "A library for finding Clojure namespaces on the classpath."
   :url "https://github.com/timofreiberg/bultitude"
   :license {:name "Eclipse Public License 1.0"}
   :dependencies [[org.clojure/clojure "1.9.0"]
