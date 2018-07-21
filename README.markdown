@@ -59,3 +59,9 @@ the issue. This library is still necessary and maintained because:
 
 New features have been added to tools.namespace recently, and when I get some time I'll see
 about porting them over.
+
+## Maintainer
+
+The original author [Raynes](https://github.com/Raynes/) died in 2016.
+
+[Timo Freiberg](https://github.com/timofreiberg) will try to keep this fork up to date and running.
