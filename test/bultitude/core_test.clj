@@ -48,9 +48,7 @@
          #{'bultitude.core 'bultitude.core-test}
          (set (namespaces-on-classpath :prefix "bultitude")))))
   (testing "dash handling in prefixes"
-    (is (= (if *read-cond*
-             '#{bulti-tude.cond bulti-tude.test}
-             '#{bulti-tude.test})
+    (is (= '#{bulti-tude.cond bulti-tude.test}
            (set (namespaces-on-classpath :prefix "bulti-tude"))))))
 
 (deftest namespace-forms-on-classpath-test
