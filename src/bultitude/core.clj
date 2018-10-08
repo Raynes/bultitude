@@ -38,8 +38,14 @@
                        (if ignore-unreadable?
                          ::done
                          (throw e))))]
-       (if (and (list? form) (= 'ns (first form)))
+       (cond
+         (and (list? form) (= 'ns (first form)))
          form
+
+         (and (list? form) (= 'in-ns (first form)))
+         nil
+
+         :else
          (when-not (= ::done form)
            (recur rdr ignore-unreadable?))))))
 
