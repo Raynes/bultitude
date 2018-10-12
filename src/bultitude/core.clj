@@ -27,6 +27,18 @@
 (defn- jar? [^File f]
   (and (.isFile f) (.endsWith (.getName f) ".jar")))
 
+(defn- drop-quote-if-present [form]
+  (if (and (seq? form)
+           (= 'quote (first form)))
+    (second form)
+    form))
+
+(defn- drop-quote-from-in-ns-form [in-ns-form]
+  (-> in-ns-form
+      vec
+      (update 1 drop-quote-if-present)
+      seq))
+
 (defn- read-ns-form
   "Given a reader on a Clojure source file, read until an ns form is found."
   ([rdr] (read-ns-form rdr true))
@@ -38,8 +50,12 @@
                        (if ignore-unreadable?
                          ::done
                          (throw e))))]
-       (if (and (list? form) (= 'ns (first form)))
+       (cond
+         (and (list? form) (= 'ns (first form)))
          form
+         (and (list? form) (= 'in-ns (first form)))
+         (drop-quote-from-in-ns-form form)
+         :else
          (when-not (= ::done form)
            (recur rdr ignore-unreadable?))))))
 
