@@ -48,15 +48,18 @@
          #{'bultitude.core 'bultitude.core-test}
          (set (namespaces-on-classpath :prefix "bultitude")))))
   (testing "dash handling in prefixes"
-    (is (= (if *read-cond*
-             '#{bulti-tude.cond bulti-tude.test}
-             '#{bulti-tude.test})
-           (set (namespaces-on-classpath :prefix "bulti-tude"))))))
+    (is (= '#{bulti-tude.cond bulti-tude.test}
+           (set (namespaces-on-classpath :prefix "bulti-tude")))))
+  (testing "file starting with in-ns using namespace aliased keywords"
+    (is (= '#{introduce-alias}
+           (set (namespaces-on-classpath
+                 :classpath "test-resources/bultitude/in-ns/"
+                 :ignore-unreadable? false))))))
 
 (deftest namespace-forms-on-classpath-test
   (testing namespace-forms-on-classpath
     (is (every?
-         #(= 'ns (first %))
+         #(contains? #{'ns 'in-ns} (first %))
          (namespace-forms-on-classpath)))))
 
 (defn test-doc-from-ns-form-helper
