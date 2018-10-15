@@ -1,6 +1,9 @@
 # Bultitude
 
 [![Build Status](https://secure.travis-ci.org/TimoFreiberg/bultitude.png)](http://travis-ci.org/TimoFreiberg/bultitude)
+[![Clojars Project](https://img.shields.io/clojars/v/timofreiberg/bultitude.svg)](https://clojars.org/timofreiberg/bultitude)
+
+`[timofreiberg/bultitude "0.3.0"]`
 
 Bultitude is a library for finding namespaces on the classpath.
 
@@ -22,6 +25,12 @@ user=> (b/namespaces-on-classpath :prefix "bultitude" :classpath "src:test")
 Value for :classpath can either be a String containing paths (using the underlying operating system's path separator), or a collection of `File` objects. 
 
 By default Bultitude will ignore files that have unreadable `ns` forms in them in order not to cause problems with projects that include [moustache templates](https://github.com/davidsantiago/stencil) on their classpath. Most functions take an `ignore-unreadable?` arg which you can set to false to make it propagate exceptions from the reader.
+
+## Changelog
+
+#### 0.3.0
+* Bultitude now also finds `in-ns` forms in addition to `ns` forms which is a 100% increase!
+  Issue referenced in https://github.com/TimoFreiberg/bultitude/issues/4.
 
 ## The Name
 
