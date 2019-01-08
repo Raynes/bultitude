@@ -1,6 +1,6 @@
 # Bultitude
 
-[![Build Status](https://secure.travis-ci.org/TimoFreiberg/bultitude.png)](http://travis-ci.org/TimoFreiberg/bultitude)
+[![Build Status](https://travis-ci.org/TimoFreiberg/bultitude.svg?branch=master)](http://travis-ci.org/TimoFreiberg/bultitude)
 [![Clojars Project](https://img.shields.io/clojars/v/timofreiberg/bultitude.svg)](https://clojars.org/timofreiberg/bultitude)
 
 `[timofreiberg/bultitude "0.3.0"]`
