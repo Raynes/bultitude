@@ -32,6 +32,8 @@
            (set (file->namespace-forms nil (io/file "test/bulti_tude")))))))
 
 (deftest namespaces-on-classpath-test
+  (testing "classpath is not empty"
+    (is (seq (namespaces-on-classpath))))
   (testing "find clojure.core"
     (is (seq (filter
               #(= 'clojure.core %)

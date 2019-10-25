@@ -1,7 +1,7 @@
 (ns bultitude.core
   (:require [clojure.java.io :as io]
             [clojure.string :as string]
-            [dynapath.util :as dp])
+            [clojure.java.classpath :as classpath])
   (:import (java.util.jar JarFile JarEntry)
            (java.util.zip ZipException)
            (java.io File BufferedReader PushbackReader InputStreamReader)
@@ -116,13 +116,13 @@
 (defn loader-classpath
   "Returns a sequence of File objects from a classloader."
   [loader]
-  (map io/as-file (dp/classpath-urls loader)))
+  (classpath/classpath loader))
 
 (defn classpath-files
   "Returns a sequence of File objects of the elements on the classpath."
   ([classloader]
-     (map io/as-file (dp/all-classpath-urls classloader)))
-  ([] (classpath-files (clojure.lang.RT/baseLoader))))
+   (classpath/classpath classloader))
+  ([] (classpath/classpath)))
 
 (defn- classpath->collection [classpath]
   (if (coll? classpath)
